@@ -81,7 +81,7 @@ lc.loans.listing(function(err, data) {
           console.log('Would have purchased: ');
 
           for (var i = 0; i < loansToBuy.length; i++) {
-            console.log(loansToBuy[i].load.id);
+            console.log('https://www.lendingclub.com/browse/loanDetail.action?loan_id=' + loansToBuy[i].loan.id);
           }
         }
       });
@@ -99,7 +99,7 @@ function scoreLoan(loan) {
   }
 
   if (loan.delinq2Yrs > 0) {
-    modifier /= (loan.delinq2Yrs + 1);
+    modifier /= (loan.delinq2Yrs + 1) * (1 - (loan.mthsSinceLastDelinq / 24));
   }
 
   return score * modifier;
