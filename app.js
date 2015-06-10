@@ -6,7 +6,7 @@ nconf.argv().file('global', './global.json').env();
 
 lc.init({ apiKey: nconf.get('apiKey') });
 
-lc.loans.listing(function(err, data) {
+lc.loans.listing(true, function(err, data) {
   handleError(err);
 
   var investorId = nconf.get('investorId');
@@ -32,60 +32,58 @@ lc.loans.listing(function(err, data) {
 
     var loansToInvestIn = Math.floor(data.availableCash / 25);
 
-    if (loansToInvestIn > 0) {
-      lc.accounts.notes(investorId, function(err, data) {
-        handleError(err);
-        var loansOwned = {};
-        
-        for (var i = 0; i < data.myNotes.length; i++) {
-          loansOwned[data.myNotes[i].loanId] = 1;
+    lc.accounts.notes(investorId, function(err, data) {
+      handleError(err);
+      var loansOwned = {};
+      
+      for (var i = 0; i < data.myNotes.length; i++) {
+        loansOwned[data.myNotes[i].loanId] = 1;
+      }
+
+      var loansToBuy = [];
+
+      console.log('Found ' + loansOfInterest.length + ' loans of interest')
+
+      for (var i = 0; i < loansOfInterest.length; i++) {
+        console.log(loansOfInterest[i].loan.id, loansOfInterest[i].loanScore)
+
+        if (!loansOwned[loansOfInterest[i].loan.id] && loansOfInterest[i].loanScore > 150 && loansToBuy <= loansToInvestIn) {
+          loansToBuy.push(loansOfInterest[i]);
         }
+      }
 
-        var loansToBuy = [];
+      if (nconf.get('buy') && loansToBuy.length) {
+        console.log('Buying ' + loansToBuy.length + ' loans.');
 
-        console.log('Found ' + loansOfInterest.length + ' loans of interest')
+        var portfolioName = moment().format('YYYY-MM-DD');
 
-        for (var i = 0; i < loansOfInterest.length; i++) {
-          console.log(loansOfInterest[i].loan.id, loansOfInterest[i].loanScore)
+        lc.accounts.createPortfolio(investorId, investorId, portfolioName, null, function(err, data) {
+          handleError(err);
 
-          if (!loansOwned[loansOfInterest[i].loan.id] && loansOfInterest[i].loanScore > 150) {
-            loansToBuy.push(loansOfInterest[i]);
-          }
-        }
-
-        if (nconf.get('buy') && loansToBuy.length) {
-          console.log('Buying ' + loansToBuy.length + ' loans.');
-
-          var portfolioName = moment().format('YYYY-MM-DD');
-
-          lc.accounts.createPortfolio(investorId, investorId, portfolioName, null, function(err, data) {
-            handleError(err);
-
-            var portfolioId = data.portfolioId;
-            var orders = [];
-
-            for (var i = 0; i < loansToBuy.length; i++) {
-              orders.push(lc.accounts.createOrderObject(loansToBuy[i].loan.id,
-                nconf.get('amountToInvest'),
-                portfolioId));
-            }
-
-            lc.accounts.submitOrder(investorId, orders, function(err, res) {
-              handleError(err);
-
-              console.log(JSON.stringify(res));
-            });
-          });
-        } else {
-          console.log('*** Virtual Mode (to act, pass the --buy flag) ***');
-          console.log('Would have purchased: ');
+          var portfolioId = data.portfolioId;
+          var orders = [];
 
           for (var i = 0; i < loansToBuy.length; i++) {
-            console.log('https://www.lendingclub.com/browse/loanDetail.action?loan_id=' + loansToBuy[i].loan.id);
+            orders.push(lc.accounts.createOrderObject(loansToBuy[i].loan.id,
+              nconf.get('amountToInvest'),
+              portfolioId));
           }
+
+          lc.accounts.submitOrder(investorId, orders, function(err, res) {
+            handleError(err);
+
+            console.log(JSON.stringify(res));
+          });
+        });
+      } else {
+        console.log('*** Virtual Mode (to act, pass the --buy flag) ***');
+        console.log('Would have purchased: ');
+
+        for (var i = 0; i < loansToBuy.length; i++) {
+          console.log('https://www.lendingclub.com/browse/loanDetail.action?loan_id=' + loansToBuy[i].loan.id);
         }
-      });
-    }
+      }
+    });
   });
 });
 
