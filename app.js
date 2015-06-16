@@ -45,11 +45,19 @@ lc.loans.listing(true, function(err, data) {
       console.log('Found ' + loansOfInterest.length + ' loans of interest')
 
       for (var i = 0; i < loansOfInterest.length; i++) {
-        console.log(loansOfInterest[i].loan.id, loansOfInterest[i].loanScore)
+        var reason = 'would buy';
 
-        if (!loansOwned[loansOfInterest[i].loan.id] && loansOfInterest[i].loanScore > 150 && loansToBuy <= loansToInvestIn) {
+        if (loansOwned[loansOfInterest[i].loan.id]) {
+          reason = 'already owned';
+        } else if (loansOfInterest[i].loanScore > 125) {
+          reason = 'low scoring loan';
+        } else if (loansToInvestIn > 0 && loansToBuy <= loansToInvestIn) {
+          reason = 'out of budget';
+        } else {
           loansToBuy.push(loansOfInterest[i]);
         }
+
+        console.log(loanIdToUrl(loansOfInterest[i].loan.id), loansOfInterest[i].loanScore, reason);
       }
 
       if (nconf.get('buy') && loansToBuy.length) {
@@ -75,12 +83,12 @@ lc.loans.listing(true, function(err, data) {
             console.log(JSON.stringify(res));
           });
         });
-      } else {
+      } else if (loansToBuy.lengh > 0) {
         console.log('*** Virtual Mode (to act, pass the --buy flag) ***');
         console.log('Would have purchased: ');
 
         for (var i = 0; i < loansToBuy.length; i++) {
-          console.log('https://www.lendingclub.com/browse/loanDetail.action?loan_id=' + loansToBuy[i].loan.id);
+          console.log(loanIdToUrl(loansToBuy[i].loan.id));
         }
       }
     });
@@ -90,7 +98,7 @@ lc.loans.listing(true, function(err, data) {
 function scoreLoan(loan) {
   var score = (1 - (loan.installment / (loan.annualInc / 12))) * 100;
 
-  var modifier = loan.grade.charCodeAt(0) - 'A'.charCodeAt(0) + (Number(loan.subGrade[1]) * .15);
+  var modifier = loan.grade.charCodeAt(0) - 'C'.charCodeAt(0) + (Number(loan.subGrade[1]) * .15);
 
   if (loan.homeOwnership == 'OWN') {
     modifier *= 2;
@@ -163,4 +171,8 @@ function handleError(err) {
   if (err) {
     throw err;
   }
+}
+
+function loanIdToUrl(loanId) {
+  return 'https://www.lendingclub.com/browse/loanDetail.action?loan_id=' + loanId;
 }
