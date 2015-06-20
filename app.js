@@ -51,7 +51,7 @@ lc.loans.listing(true, function(err, data) {
           reason = 'already owned';
         } else if (loansOfInterest[i].loanScore < 103) {
           reason = 'low scoring loan';
-        } else if (!(loansToInvestIn > 0 && loansToBuy.length <= loansToInvestIn)) {
+        } else if (!(loansToInvestIn > 0 && loansToBuy.length < loansToInvestIn)) {
           reason = 'out of budget';
         } else {
           loansToBuy.push(loansOfInterest[i]);
@@ -105,7 +105,7 @@ function scoreLoan(loan) {
   }
 
   if (loan.delinq2Yrs > 0) {
-    modifier /= (1 + (loan.delinq2Yrs * (1 - loan.mthsSinceLastDelinq / 24)));
+    modifier /= (loan.delinq2Yrs + ((loan.delinq2Yrs + loan.delinq2Yrs) * (1 - loan.mthsSinceLastDelinq / 24)));
   }
 
   return score * modifier;
