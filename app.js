@@ -30,7 +30,7 @@ lc.loans.listing(true, function(err, data) {
 
     console.log('Funds available: ' + data.availableCash);
 
-    var loansToInvestIn = Math.floor(data.availableCash / 25);
+    var loansToInvestIn = Math.floor(data.availableCash / nconf.get('amountToInvest'));
 
     lc.accounts.notes(investorId, function(err, data) {
       handleError(err);
