@@ -4,6 +4,8 @@ var moment = require('moment');
 
 nconf.argv().file('global', './global.json').env();
 
+var minLowScore = nconf.get('minLowScore') || 103;
+
 lc.init({ apiKey: nconf.get('apiKey') });
 
 lc.loans.listing(true, function(err, data) {
@@ -22,7 +24,13 @@ lc.loans.listing(true, function(err, data) {
   }
 
   loansOfInterest.sort(function(a, b) {
-    return a.loanScore < b.loanScore;
+    if (a.loanScore > b.loanScore) {
+      return -1;
+    } else if (a.loanScore < b.loanScore) {
+      return 1;
+    } else {
+      return 0;
+    }
   });
 
   lc.accounts.availableCash(investorId, function(err, data) {
@@ -49,7 +57,7 @@ lc.loans.listing(true, function(err, data) {
 
         if (loansOwned[loansOfInterest[i].loan.id]) {
           reason = 'already owned';
-        } else if (loansOfInterest[i].loanScore < 103) {
+        } else if (loansOfInterest[i].loanScore < minLowScore) {
           reason = 'low scoring loan';
         } else if (!(loansToInvestIn > 0 && loansToBuy.length < loansToInvestIn)) {
           reason = 'out of budget';
