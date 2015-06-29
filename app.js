@@ -108,7 +108,7 @@ function scoreLoan(loan) {
 
   var modifier = loan.grade.charCodeAt(0) - 'C'.charCodeAt(0) + (Number(loan.subGrade[1]) * .15);
 
-  if (loan.homeOwnership == 'OWN') {
+  if (loan.homeOwnership == 'OWN' && loan.delinq2Yrs == 0) {
     modifier *= 2;
   }
 
