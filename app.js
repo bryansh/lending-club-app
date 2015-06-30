@@ -1,6 +1,7 @@
 var lc = require('node-lending-club-api');
 var nconf  = require('nconf');
 var moment = require('moment');
+var loanUtils = require('./lib/loanUtils');
 
 nconf.argv().file('global', './global.json').env();
 
@@ -18,7 +19,7 @@ lc.loans.listing(true, function(err, data) {
     if (matchesCriteria(data.loans[i])) {
       loansOfInterest.push({
         loan: data.loans[i],
-        loanScore: scoreLoan(data.loans[i])
+        loanScore: loanUtils.scoreLoan(data.loans[i])
       });
     }
   }
@@ -102,22 +103,6 @@ lc.loans.listing(true, function(err, data) {
     });
   });
 });
-
-function scoreLoan(loan) {
-  var score = (1 - (loan.installment / (loan.annualInc / 12))) * 100;
-
-  var modifier = loan.grade.charCodeAt(0) - 'C'.charCodeAt(0) + (Number(loan.subGrade[1]) * .15);
-
-  if (loan.homeOwnership == 'OWN' && loan.delinq2Yrs == 0) {
-    modifier *= 2;
-  }
-
-  if (loan.delinq2Yrs > 0) {
-    modifier /= (loan.delinq2Yrs + ((loan.delinq2Yrs + loan.delinq2Yrs) * (1 - loan.mthsSinceLastDelinq / 24)));
-  }
-
-  return score * modifier;
-}
 
 function matchesCriteria(loan) {
   if (loan.empLength < 47) {
