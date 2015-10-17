@@ -5,7 +5,7 @@ var loanUtils = require('./lib/loanUtils');
 
 nconf.argv().file('global', './global.json').env();
 
-var minLowScore = nconf.get('minLowScore') || 103;
+var minLoanScore = Number(nconf.get('minLoanScore')) || 200;
 
 lc.init({ apiKey: nconf.get('apiKey') });
 
@@ -58,7 +58,7 @@ lc.loans.listing(true, function(err, data) {
 
         if (loansOwned[loansOfInterest[i].loan.id]) {
           reason = 'already owned';
-        } else if (loansOfInterest[i].loanScore < minLowScore) {
+        } else if (loansOfInterest[i].loanScore < minLoanScore) {
           reason = 'low scoring loan';
         } else if (!(loansToInvestIn > 0 && loansToBuy.length < loansToInvestIn)) {
           reason = 'out of budget';
