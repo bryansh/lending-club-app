@@ -1,21 +1,23 @@
-var lc = require('node-lending-club-api');
-var nconf  = require('nconf');
-var moment = require('moment');
-var loanUtils = require('./lib/loanUtils');
+/*jshint esversion: 6 */
+
+const lc = require('node-lending-club-api');
+const nconf  = require('nconf');
+const moment = require('moment');
+const loanUtils = require('./lib/loanUtils');
 
 nconf.argv().file('global', './global.json').env();
 
-var minLoanScore = Number(nconf.get('minLoanScore')) || 200;
+const minLoanScore = Number(nconf.get('minLoanScore')) || 200;
 
 lc.init({ apiKey: nconf.get('apiKey') });
 
 lc.loans.listing(true, function(err, data) {
   handleError(err);
 
-  var investorId = nconf.get('investorId');
-  var loansOfInterest = [];
+  const investorId = nconf.get('investorId');
+  let loansOfInterest = [];
 
-  for (var i = 0; i < data.loans.length; i++) {
+  for (let i = 0; i < data.loans.length; i++) {
     if (matchesCriteria(data.loans[i])) {
       loansOfInterest.push({
         loan: data.loans[i],
@@ -39,22 +41,21 @@ lc.loans.listing(true, function(err, data) {
 
     console.log('Funds available: ' + data.availableCash);
 
-    var loansToInvestIn = Math.floor(data.availableCash / nconf.get('amountToInvest'));
+    const loansToInvestIn = Math.floor(data.availableCash / nconf.get('amountToInvest'));
 
     lc.accounts.notes(investorId, function(err, data) {
       handleError(err);
-      var loansOwned = {};
-      
-      for (var i = 0; i < data.myNotes.length; i++) {
+      let loansOwned = {};
+      let loansToBuy = [];
+
+      for (let i = 0; i < data.myNotes.length; i++) {
         loansOwned[data.myNotes[i].loanId] = 1;
       }
 
-      var loansToBuy = [];
+      console.log('Found ' + loansOfInterest.length + ' loans of interest');
 
-      console.log('Found ' + loansOfInterest.length + ' loans of interest')
-
-      for (var i = 0; i < loansOfInterest.length; i++) {
-        var reason = 'would buy';
+      for (let i = 0; i < loansOfInterest.length; i++) {
+        let reason = 'would buy';
 
         if (loansOwned[loansOfInterest[i].loan.id]) {
           reason = 'already owned';
@@ -72,15 +73,15 @@ lc.loans.listing(true, function(err, data) {
       if (nconf.get('buy') && loansToBuy.length) {
         console.log('Buying ' + loansToBuy.length + ' loans.');
 
-        var portfolioName = moment().format('YYYY-MM-DD');
+        const portfolioName = moment().format('YYYY-MM-DD');
 
         lc.accounts.createPortfolio(investorId, investorId, portfolioName, null, function(err, data) {
           handleError(err);
 
-          var portfolioId = data.portfolioId;
-          var orders = [];
+          const portfolioId = data.portfolioId;
+          let orders = [];
 
-          for (var i = 0; i < loansToBuy.length; i++) {
+          for (let i = 0; i < loansToBuy.length; i++) {
             orders.push(lc.accounts.createOrderObject(loansToBuy[i].loan.id,
               nconf.get('amountToInvest'),
               portfolioId));
@@ -96,7 +97,7 @@ lc.loans.listing(true, function(err, data) {
         console.log('*** Virtual Mode (to act, pass the --buy flag) ***');
         console.log('Would have purchased: ');
 
-        for (var i = 0; i < loansToBuy.length; i++) {
+        for (let i = 0; i < loansToBuy.length; i++) {
           console.log(loanIdToUrl(loansToBuy[i].loan.id));
         }
       }
@@ -129,23 +130,23 @@ function matchesCriteria(loan) {
     return false;
   }
 
-  if (loan.accNowDelinq != 0) {
+  if (loan.accNowDelinq !== 0) {
     return false;
   }
 
-  if (loan.chargeoffWithin12Mths != 0) {
+  if (loan.chargeoffWithin12Mths !== 0) {
     return false;
   }
 
-  if (loan.pubRecBankruptcies != 0) {
+  if (loan.pubRecBankruptcies !== 0) {
     return false;
   }
 
-  if (loan.taxLiens != 0) {
+  if (loan.taxLiens !== 0) {
     return false;
   }
 
-  if (loan.accNowDelinq != 0) {
+  if (loan.accNowDelinq !== 0) {
     return false;
   }
 
