@@ -1,11 +1,18 @@
 /*jshint esversion: 6 */
 
 const lc = require('node-lending-club-api');
+const loanUtils = require('./lib/loanUtils');
 const nconf  = require('nconf');
 const moment = require('moment');
-const loanUtils = require('./lib/loanUtils');
+const winston = require('winston');
 
 nconf.argv().file('global', './global.json').env();
+
+const logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.Console)()
+  ]
+});
 
 const minLoanScore = Number(nconf.get('minLoanScore')) || 200;
 
@@ -39,7 +46,7 @@ lc.loans.listing(true, function(err, data) {
   lc.accounts.availableCash(investorId, function(err, data) {
     handleError(err);
 
-    console.log('Funds available: ' + data.availableCash);
+    logger.info('Funds available: ' + data.availableCash);
 
     const loansToInvestIn = Math.floor(data.availableCash / nconf.get('amountToInvest'));
 
@@ -52,7 +59,7 @@ lc.loans.listing(true, function(err, data) {
         loansOwned[data.myNotes[i].loanId] = 1;
       }
 
-      console.log('Found ' + loansOfInterest.length + ' loans of interest');
+      logger.info('Found ' + loansOfInterest.length + ' loans of interest');
 
       for (let i = 0; i < loansOfInterest.length; i++) {
         let reason = 'would buy';
@@ -67,11 +74,11 @@ lc.loans.listing(true, function(err, data) {
           loansToBuy.push(loansOfInterest[i]);
         }
 
-        console.log(loanIdToUrl(loansOfInterest[i].loan.id), loansOfInterest[i].loanScore, reason);
+        logger.info(loanIdToUrl(loansOfInterest[i].loan.id), loansOfInterest[i].loanScore, reason);
       }
 
       if (nconf.get('buy') && loansToBuy.length) {
-        console.log('Buying ' + loansToBuy.length + ' loans.');
+        logger.info('Buying ' + loansToBuy.length + ' loans.');
 
         const portfolioName = moment().format('YYYY-MM-DD');
 
@@ -90,15 +97,15 @@ lc.loans.listing(true, function(err, data) {
           lc.accounts.submitOrder(investorId, orders, function(err, res) {
             handleError(err);
 
-            console.log(JSON.stringify(res));
+            console.info(JSON.stringify(res));
           });
         });
       } else if (loansToBuy.lengh > 0) {
-        console.log('*** Virtual Mode (to act, pass the --buy flag) ***');
-        console.log('Would have purchased: ');
+        logger.info('*** Virtual Mode (to act, pass the --buy flag) ***');
+        logger.info('Would have purchased: ');
 
         for (let i = 0; i < loansToBuy.length; i++) {
-          console.log(loanIdToUrl(loansToBuy[i].loan.id));
+          logger.info(loanIdToUrl(loansToBuy[i].loan.id));
         }
       }
     });
@@ -163,6 +170,7 @@ function matchesCriteria(loan) {
 
 function handleError(err) {
   if (err) {
+    logger.error(err);
     throw err;
   }
 }
