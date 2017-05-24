@@ -97,7 +97,7 @@ lc.loans.listing(true, function(err, data) {
           lc.accounts.submitOrder(investorId, orders, function(err, res) {
             handleError(err);
 
-            console.info(JSON.stringify(res));
+            logger.info(JSON.stringify(res));
           });
         });
       } else if (loansToBuy.lengh > 0) {
