@@ -14,7 +14,7 @@ const logger = new (winston.Logger)({
   ]
 });
 
-const minLoanScore = Number(nconf.get('minLoanScore')) || 200;
+const minLoanScore = Number(nconf.get('minLoanScore')) || 70;
 
 lc.init({ apiKey: nconf.get('apiKey') });
 
@@ -117,7 +117,7 @@ function matchesCriteria(loan) {
     return false;
   }
 
-  if (loan.grade < 'D') {
+  if (loan.grade < 'C') {
     return false;
   }
 
