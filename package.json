@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "moment": "^2.10.3",
+    "moment": "^2.29.1",
     "nconf": "^0.7.1",
     "node-lending-club-api": "^1.0.1",
     "winston": "^2.3.1"
