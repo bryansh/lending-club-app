@@ -16,7 +16,7 @@ const minLoanScore = Number(nconf.get('minLoanScore')) || 70
 
 lc.init({ apiKey: nconf.get('apiKey') })
 
-lc.loans.listing(true, function (err, data) {
+lc.loans.listing(true, (err, data) => {
   handleError(err)
 
   logger.info(data.loans.length + ' loans being funded')
@@ -33,7 +33,7 @@ lc.loans.listing(true, function (err, data) {
     }
   }
 
-  loansOfInterest.sort(function (a, b) {
+  loansOfInterest.sort((a, b) => {
     if (a.loanScore > b.loanScore) {
       return -1
     } else if (a.loanScore < b.loanScore) {
@@ -43,14 +43,14 @@ lc.loans.listing(true, function (err, data) {
     }
   })
 
-  lc.accounts.availableCash(investorId, function (err, data) {
+  lc.accounts.availableCash(investorId, (err, data) => {
     handleError(err)
 
     logger.info('Funds available: ' + data.availableCash)
 
     const loansToInvestIn = Math.floor(data.availableCash / nconf.get('amountToInvest'))
 
-    lc.accounts.notes(investorId, function (err, data) {
+    lc.accounts.notes(investorId, (err, data) => {
       handleError(err)
       const loansOwned = {}
       const loansToBuy = []
@@ -82,7 +82,7 @@ lc.loans.listing(true, function (err, data) {
 
         const portfolioName = moment().format('YYYY-MM-DD')
 
-        lc.accounts.createPortfolio(investorId, investorId, portfolioName, null, function (err, data) {
+        lc.accounts.createPortfolio(investorId, investorId, portfolioName, null, (err, data) => {
           handleError(err)
 
           const portfolioId = data.portfolioId
@@ -94,7 +94,7 @@ lc.loans.listing(true, function (err, data) {
               portfolioId))
           }
 
-          lc.accounts.submitOrder(investorId, orders, function (err, res) {
+          lc.accounts.submitOrder(investorId, orders, (err, res) => {
             handleError(err)
 
             logger.info(JSON.stringify(res))
