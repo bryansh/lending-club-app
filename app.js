@@ -23,14 +23,20 @@ lc.loans.listing(true, (err, data) => {
 
   const investorId = nconf.get('investorId')
   const loansOfInterest = []
+  const rejections = {}
 
   for (let i = 0; i < data.loans.length; i++) {
-    if (matchesCriteria(data.loans[i])) {
+    if (matchesCriteria(data.loans[i], rejections)) {
       loansOfInterest.push({
         loan: data.loans[i],
         loanScore: loanUtils.scoreLoan(data.loans[i])
       })
     }
+  }
+
+  logger.info(loansOfInterest.length, ' interesting loans')
+  if (loansOfInterest.length === 0) {
+    logger.info(rejections)
   }
 
   loansOfInterest.sort((a, b) => {
@@ -112,56 +118,124 @@ lc.loans.listing(true, (err, data) => {
   })
 })
 
-function matchesCriteria (loan) {
-  if (loan.empLength < 47) {
+function matchesCriteria (loan, rejections) {
+  if (loan.empLength < 36) {
+    if (!rejections.empLength) {
+      rejections.empLength = 1
+    } else {
+      rejections.empLength++
+    }
+
     return false
   }
 
   if (loan.grade < 'C') {
+    if (!rejections.loanGrade) {
+      rejections.loanGrade = 1
+    } else {
+      rejections.loanGrade++
+    }
+
     return false
   }
 
   if (loan.addrState === 'CA') {
+    if (!rejections.california) {
+      rejections.california = 1
+    } else {
+      rejections.california++
+    }
+
     return false
   }
 
   if (loan.homeOwnership === 'RENT') {
+    if (!rejections.homeOwner) {
+      rejections.homeOwner = 1
+    } else {
+      rejections.homeOwner++
+    }
+
     return false
   }
 
   if (loan.totalAcc < 6) {
+    if (!rejections.totalAccounts) {
+      rejections.totalAccounts = 1
+    } else {
+      rejections.totalAccounts++
+    }
+
     return false
   }
 
   if (!(loan.purpose === 'debt_consolidation' || loan.purpose === 'wedding' || loan.purpose === 'moving' || loan.purpose === 'house')) {
+    if (!rejections.purpose) {
+      rejections.purpose = 1
+    } else {
+      rejections.purpose++
+    }
+
     return false
   }
 
   if (loan.accNowDelinq !== 0) {
+    if (!rejections.delinquentAccounts) {
+      rejections.delinquentAccounts = 1
+    } else {
+      rejections.delinquentAccounts++
+    }
+
     return false
   }
 
   if (loan.chargeoffWithin12Mths !== 0) {
+    if (!rejections.chargedOffLastYear) {
+      rejections.chargedOffLastYear = 1
+    } else {
+      rejections.chargedOffLastYear++
+    }
+
     return false
   }
 
   if (loan.pubRecBankruptcies !== 0) {
+    if (!rejections.publicBankruptcies) {
+      rejections.publicBankruptcies = 1
+    } else {
+      rejections.publicBankruptcies++
+    }
+
     return false
   }
 
   if (loan.taxLiens !== 0) {
-    return false
-  }
+    if (!rejections.taxLiens) {
+      rejections.taxLiens = 1
+    } else {
+      rejections.taxLiens++
+    }
 
-  if (loan.accNowDelinq !== 0) {
     return false
   }
 
   if (loan.installment / (loan.annualInc / 12) > 0.1075) {
+    if (!rejections.installmentincomeratio) {
+      rejections.installmentincomeratio = 1
+    } else {
+      rejections.installmentincomeratio++
+    }
+
     return false
   }
 
   if (loan.annualInc > 120000) {
+    if (!rejections.income) {
+      rejections.income = 1
+    } else {
+      rejections.income++
+    }
+
     return false
   }
 
